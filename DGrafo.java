@@ -134,9 +134,25 @@ public class DGrafo implements Graph<vertex> {
         // Esta función devuelve una lista de vértices sucesores que tienen una conexión
         // con el vértice dado.
         List<vertex> outwardEdges = new ArrayList<>();
+        ArrayList<Double> orden = new ArrayList<>();
+        double cambioalto = 0.0;
         for (edges a : connect) {
             if (a.getExtremoInicial().getId().equals(from.getId())) {
-                outwardEdges.add(a.getExtremoFinal());
+                if (a.getTasa()>=cambioalto){
+                    orden.add(a.getTasa());
+                }
+            }
+        }
+        //orden de mayor a menor
+        orden.sort((o1, o2) -> o2.compareTo(o1));
+        //System.out.println(orden);
+        for (double x : orden) {
+            for (edges a : connect) {
+                if (a.getExtremoInicial().getId().equals(from.getId())) {
+                    if (a.getTasa()==x){
+                        outwardEdges.add(a.getExtremoFinal());
+                    }
+                }
             }
         }
         return outwardEdges;
@@ -211,6 +227,7 @@ public class DGrafo implements Graph<vertex> {
                 add(new vertex(currency2));
                 // Agregar conexión al grafo
                 connect(vertices.get(currency1), vertices.get(currency2), (rate));
+                System.out.println("Agregando conexión entre " + currency1 + " y " + currency2 + " con tasa " + rate);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -220,7 +237,9 @@ public class DGrafo implements Graph<vertex> {
         double tasaAcomulada = 1.0;
         ArrayList<vertex> Ciclo = new ArrayList<>();
         for (vertex v : vertices.values()) {
+            //System.out.println(v.getId()+" "+tasas+" "+tasaAcomulada+" "+Ciclo+" "+TasasVertex);
             tasaAcomulada = checkArbitrage(v, v, tasas, tasaAcomulada, Ciclo);
+            //System.out.println(v.getId()+" "+tasas+" "+tasaAcomulada+" "+Ciclo+" "+TasasVertex);
             if (Ciclo.get(0)!=Ciclo.get(Ciclo.size()-1)){
                 tasaAcomulada = 1.0;
             }
@@ -247,12 +266,19 @@ public class DGrafo implements Graph<vertex> {
     }
 
     private double checkArbitrage(vertex x, vertex inicial, ArrayList<Double> tasas, double tasaAcomulada, ArrayList<vertex> Ciclo) {
+        if (x == inicial && tasas.size()>1){
+            Ciclo.add(x);
+            x.setVisitado(true);
+            //System.out.println("aca2: "+x.getId()+" "+tasas+" "+tasaAcomulada+" "+Ciclo+" ");
+            return tasaAcomulada;
+        }
         Ciclo.add(x);
         List<vertex> cambios = getOutwardEdges(x);
+        //System.out.println(cambios);
         for (vertex cambio : cambios) {
             vertex y = cambio;
-            //System.out.println(v.getId()+" "+tasas+" "+tasaAcomulada+" "+Ciclo+" "+TasasVertex);
             if (!y.getVisitado()){
+                System.out.println("aca1: "+x.getId()+" "+y.getId()+" "+tasas+" "+tasaAcomulada+" "+Ciclo+" ");
                 y.setVisitado(true);
                 double tasaActual = getTasa(x, y);
                 tasas.add(tasaActual);
