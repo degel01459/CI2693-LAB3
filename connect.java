@@ -6,7 +6,7 @@ public abstract class connect {
   private double tasa;
   private boolean visitado;
 
-  public connect(String id, float tasa) {
+  public connect(String id, double tasa) {
     // Constructor de la clase abstracta
     this.id = id;
     this.tasa = tasa;

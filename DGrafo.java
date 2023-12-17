@@ -2,10 +2,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-
 
 public class DGrafo implements Graph<vertex> {
     // Declaramos las variables, arreglos y tablas que vayamos a utilizar
@@ -31,13 +29,27 @@ public class DGrafo implements Graph<vertex> {
         return false;
     }
 
+    public vertex getVertex(String id) {
+        // Esta función devuelve el vértice con el id dado si existe en el grafo.
+        if (vertices.containsKey(id)) {
+            return vertices.get(id);
+        }
+        return null;
+    }
+
     // Método para verificar si un vértice existe en el grafo dado su identificador
     public boolean contains(vertex vertex) {
-        if (vertices.containsKey(vertex.getId())) {
-            // El vértice existe en el grafo
-            return true;
+        if (vertex == null) {
+            // El vértice no existe en el grafo
+            return false;
+        } 
+        else if (vertex != null) {
+            if (vertices.containsKey(vertex.getId())) {
+                // El vértice existe en el grafo
+                return true;
+            }
+            // El vértice no existe en el grafo
         }
-        // El vértice no existe en el grafo
         return false;
     }
 
@@ -54,12 +66,38 @@ public class DGrafo implements Graph<vertex> {
         // No existe un lado entre los vértices
         return false;
     }
+    public double getTasa(vertex from, vertex to) {
+        // Esta función devuelve el peso de la arista entre dos vértices si existe una
+        // conexión entre ellos.
+        if (containsconnect(from, to)) {
+            for (edges a : connect) {
+                if (a.getExtremoInicial().equals(from) && a.getExtremoFinal().equals(to)){
+                    return a.getTasa();
+                }
+            }
+        }
+        return inf;
+    }
 
-    public boolean connect(vertex from, vertex to) {
+    public Boolean setTasa(vertex from, vertex to, double x) {
+        // Esta función establece el peso de la arista entre dos vértices si existe una
+        // conexión entre ellos.
+        if (containsconnect(from, to)) {
+            for (edges a : connect) {
+                if (a.getExtremoInicial().equals(from) && a.getExtremoFinal().equals(to)){
+                    a.setTasa(x);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean connect(vertex from, vertex to, double x) {
         // Esta función establece la relación entre dos vértices si existe una conexión
         // entre ellos.
-        if (!containsconnect(from, to)) {
-            edges arista = new edges("" + from.getId() + to.getId() + "", 0, from, to);
+        if (contains(from) && contains(to) && !from.equals(to) && !containsconnect(from, to)) {
+            edges arista = new edges("" + from.getId() + to.getId() + "", x, from, to);
             connect.add(arista);
             return true;
         }
@@ -124,11 +162,11 @@ public class DGrafo implements Graph<vertex> {
     }
     public List<vertex> getAllVertices() {
         // Esta función devuelve una lista de todos los vértices del grafo.
-        List<vertex> allVertices = new ArrayList<>();
-        for (vertex key : vertices.values()) {
-            allVertices.add(key);
+        List<vertex> vertices = new ArrayList<>();
+        for (String a : this.vertices.keySet()) {
+            vertices.add(this.vertices.get(a));
         }
-        return allVertices;
+        return vertices;
     }
 
     public boolean remove(vertex vertex) {
@@ -143,20 +181,6 @@ public class DGrafo implements Graph<vertex> {
     public int size() {
         // Esta función devuelve el número de vértices en el grafo.
         return vertices.size();
-    }
-
-    public Graph<vertex> subgraph(Collection<vertex> vertices) {
-        // Esta función devuelve un subgrafo del grafo dado un conjunto de vértices.
-        Graph<vertex> subgraph = new DGrafo();
-        for (vertex v : vertices) {
-            subgraph.add(v);
-        }
-        for (edges a : connect) {
-            if (subgraph.contains(a.getExtremoInicial()) && subgraph.contains(a.getExtremoFinal())) {
-                subgraph.connect(a.getExtremoInicial(), a.getExtremoFinal());
-            }
-        }
-        return subgraph;
     }
 
     @Override
@@ -174,55 +198,70 @@ public class DGrafo implements Graph<vertex> {
         // Devolver la representación en forma de cadena del grafo
         return sb.toString();
     }
-
-    public boolean cargarGrafo(String dirArchivo) {
+    public void cargarGrafo(String dirArchivo) {
         // Esta función cargará los datos de un .txt
-        try (BufferedReader lista = new BufferedReader(new FileReader(dirArchivo))) {
-            String linea;
-            // Dividir la línea en datos separados por ' '
-            while ((linea = lista.readLine()) != null) {
-                String[] datos = linea.split(" ");
-                String A = datos[0];
-                String B = datos[1];
-                float C = Float.parseFloat(datos[2]);
-                vertex a1 = new vertex(A);
-                vertex a2 = new vertex(B);
-                // Agregar el vértices y la conexión al grafo
-                add(a1);
-                add(a2);
-                connect(a1, a2);
-                connect.get(connect.size() - 1).setTasa(C);
+        try (BufferedReader br = new BufferedReader(new FileReader(dirArchivo))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] tokens = line.split(" ");
+                String currency1 = tokens[0];
+                String currency2 = tokens[1];
+                Double rate = Double.parseDouble(tokens[2]);
+                add(new vertex(currency1));
+                add(new vertex(currency2));
+                // Agregar conexión al grafo
+                connect(vertices.get(currency1), vertices.get(currency2), (rate));
             }
-            return true;
-        } catch (IOException | NumberFormatException e) {
-            return false;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        ArrayList<Double> TasasVertex = new ArrayList<>();
+        ArrayList<Double> tasas = new ArrayList<>();
+        double tasaAcomulada = 1.0;
+        ArrayList<vertex> Ciclo = new ArrayList<>();
+        for (vertex v : vertices.values()) {
+            tasaAcomulada = checkArbitrage(v, v, tasas, tasaAcomulada, Ciclo);
+            if (Ciclo.get(0)!=Ciclo.get(Ciclo.size()-1)){
+                tasaAcomulada = 1.0;
+            }
+            TasasVertex.add(tasaAcomulada);
+            tasaAcomulada = 1.0;
+            tasas.clear();
+            Ciclo.clear();
+            for (vertex v2 : vertices.values()) {
+                v2.setVisitado(false);
+            }
+        }
+        boolean arbitragePossible = false;
+        for (int i = 0; i < TasasVertex.size(); i++) {
+            //System.out.println(TasasVertex.get(i));
+            if (TasasVertex.get(i)>1.0){
+                arbitragePossible = true;
+                System.out.println("DINERO FACIL DESDE TU CASA");
+                break;
+            }
+        }
+        if (!arbitragePossible){
+            System.out.println("TODO GUAY DEL PARAGUAY");
         }
     }
 
-    public boolean CicloDFS(vertex  inicio,vertex  x, List<vertex> Arreglo){
-        // Esta función devuelve un ciclo en el grafo si existe.
-        List<vertex> ciclo = Arreglo;
-        x.setVisitado(true);
-        // Iterar sobre todos los vértices en el grafo
-        for (vertex v : getOutwardEdges(x)) {
-            // Verificar si el vértice ha sido visitado
-            if (!v.getVisitado()) {
-                // Verificar si existe un ciclo en el grafo
-                v.setVisitado(true);
-                if ((!v.getId().equals(inicio.getId()))) {
-                    ciclo.add(v);
-                    if (CicloDFS(inicio, v, ciclo)){
-                    // Devolver el ciclo
-                    return false;
-                    }
-                }
-            }
-            if(v.getId().equals(inicio.getId())){
-                return true;
+    private double checkArbitrage(vertex x, vertex inicial, ArrayList<Double> tasas, double tasaAcomulada, ArrayList<vertex> Ciclo) {
+        Ciclo.add(x);
+        List<vertex> cambios = getOutwardEdges(x);
+        for (vertex cambio : cambios) {
+            vertex y = cambio;
+            //System.out.println(v.getId()+" "+tasas+" "+tasaAcomulada+" "+Ciclo+" "+TasasVertex);
+            if (!y.getVisitado()){
+                y.setVisitado(true);
+                double tasaActual = getTasa(x, y);
+                tasas.add(tasaActual);
+                tasaAcomulada = tasaAcomulada*tasaActual;
+                tasaAcomulada = checkArbitrage(y, inicial, tasas, tasaAcomulada, Ciclo);
+                return tasaAcomulada;
             }
         }
-        // No existe un ciclo en el grafo
-        return false;
+        return tasaAcomulada;
     }
     // end
 }

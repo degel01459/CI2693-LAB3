@@ -4,7 +4,7 @@ public class edges extends connect {
   private vertex extremoFinal;
 
   // Crear Arista.
-  public edges(String id, float Tasa, vertex extremoInicial, vertex extremoFinal) {
+  public edges(String id, double Tasa, vertex extremoInicial, vertex extremoFinal) {
     super(id, Tasa);
     this.extremoInicial = extremoInicial;
     this.extremoFinal = extremoFinal;

@@ -1,13 +1,13 @@
 public class vertex {
       // variables de la clase.
       private String id;
-      private float peso;
+      private int peso;
       private boolean visitado;
 
       // Constructor de la clase.
       public vertex(String id) {
             this.id = id;
-            this.peso = -1;
+            this.peso = 0;
             this.visitado = false;
       }
 
@@ -23,7 +23,7 @@ public class vertex {
       }
 
       // obtener peso del vertice.
-      public float getPeso() {
+      public int getPeso() {
             return this.peso;
       }
 
@@ -32,7 +32,7 @@ public class vertex {
             return this.id;
       }
 
-      public float setPeso(int p){
+      public int setPeso(int p){
             this.peso = p;
             return this.peso;
       } 
